@@ -1,6 +1,8 @@
 package jp.nita.getlyricsmusicextension;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -24,7 +26,7 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 	public String get(String uriStr){
 		HttpURLConnection http = null;
 		InputStream in = null;
-		String src = new String();
+		StringBuilder src=new StringBuilder();
 
 		try {
 			// URLÇ…HTTPê⁄ë±
@@ -34,16 +36,13 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 			http.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36");
 			http.connect();
 			in = http.getInputStream();
-
-			byte[] line;
-			int size;
-			while (true) {
-				line = new byte[2048];
-				size = in.read(line);
-				if (size <= 0)
-					break;
-				src += new String(line);
-			}
+			InputStreamReader isr = new InputStreamReader(in,"UTF-8");
+			BufferedReader reader = new BufferedReader(isr);
+			String line;
+			while ((line = reader.readLine()) != null) {
+                src.append(line);
+                src.append("\n");
+            }
 		} catch (Exception e) {
 			e.printStackTrace();
 			Log.e("ExtensionActivity","",e);
@@ -59,7 +58,7 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 				throw new RuntimeException();
 			}
 		}
-		return src;
+		return src.toString();
 	}
 
 	@SuppressWarnings("deprecation")

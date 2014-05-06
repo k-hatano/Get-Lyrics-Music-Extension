@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The name of the application as a whole -->
+    <string name="app_name">Get Lyrics Music Extension</string>
+
+    <!-- This text is shown in the lists of infinite music extension as a description of the extension -->
+    <string name="description">This is an example extension</string>
+    <string name="action_settings">Settings</string>
+</resources>

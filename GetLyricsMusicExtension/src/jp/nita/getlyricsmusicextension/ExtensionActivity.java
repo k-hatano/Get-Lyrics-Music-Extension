@@ -16,57 +16,88 @@
  */
 package jp.nita.getlyricsmusicextension;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 public class ExtensionActivity extends Activity {
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.main);
 
-        Intent intent = getIntent();
+		Intent intent = getIntent();
 
-        // Retrieve the URI from the intent, this is a URI to a MediaStore audio
-        // file
-        Uri trackUri = intent.getData();
+		// Retrieve the URI from the intent, this is a URI to a MediaStore audio
+		// file
+		Uri trackUri = intent.getData();
 
-        // Use it to query the media provider
-        Cursor trackCursor = getContentResolver().query(
-                trackUri,
-                new String[] {
-                        MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST,
-                        MediaStore.Audio.Media.ALBUM
-                }, null, null, null);
+		// Use it to query the media provider
+		Cursor trackCursor = getContentResolver().query(
+				trackUri,
+				new String[] {
+						MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST,
+						MediaStore.Audio.Media.ALBUM, MediaStore.Audio.Media.ALBUM_ID
+				}, null, null, null);
 
-        if (trackCursor != null) {
-            try {
-                if (trackCursor.moveToFirst()) {
+		if (trackCursor != null) {
+			try {
+				if (trackCursor.moveToFirst()) {
 
-                    // And retrieve the wanted information
-                    String trackName = trackCursor.getString(trackCursor
-                            .getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE));
-                    String albumName = trackCursor.getString(trackCursor
-                            .getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM));
-                    String artistName = trackCursor.getString(trackCursor
-                            .getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST));
+					Cursor albumCursor = getContentResolver().query(
+							MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+							null, MediaStore.Audio.Albums._ID + "=?", 
+							new String[]{ trackCursor.getString(trackCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)) }, null);
 
-                    ((TextView)findViewById(R.id.track)).setText(trackName);
-                    ((TextView)findViewById(R.id.album)).setText(albumName);
-                    ((TextView)findViewById(R.id.artist)).setText(artistName);
+					Bitmap bm;
+					if(albumCursor!=null && albumCursor.getCount()>0){
+						albumCursor.moveToFirst();
+						int albumArtIndex = albumCursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM_ART);
+						String albumArt = albumCursor.getString(albumArtIndex);
 
-                }
-            } finally {
-                trackCursor.close();
-            }
-        }
+						bm = BitmapFactory.decodeFile( albumArt );
+					}else{
+						Resources r = getResources();
+						bm = BitmapFactory.decodeResource(r, R.drawable.ic_launcher);
+					}
+					ImageView iv = (ImageView)findViewById(R.id.album_artwork);
+					iv.setImageBitmap(bm);
 
-    }
+					// And retrieve the wanted information
+
+					String trackName = trackCursor.getString(trackCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE));
+					String artistName = trackCursor.getString(trackCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST));
+					String artistAndAlbumName = 
+							trackCursor.getString(trackCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST))
+							+" "+getString(R.string.separator)+" "+
+							trackCursor.getString(trackCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM));
+
+					((TextView)findViewById(R.id.track)).setText(trackName);
+					((TextView)findViewById(R.id.artist)).setText(artistAndAlbumName);
+					
+					String params[]={trackName,artistName};
+					
+					AsyncLyricsSearcher searcher = new AsyncLyricsSearcher(this);
+					searcher.execute(params);
+				}
+			} finally {
+				trackCursor.close();
+			}
+		}
+	}
 
 }

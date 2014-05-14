@@ -1,18 +1,17 @@
 package jp.nita.getlyricsmusicextension;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Handler;
-import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
@@ -24,150 +23,95 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 		activity=a;
 	}
 
-	public String get(String uriStr){
-		HttpURLConnection http = null;
-		InputStream in = null;
-		StringBuilder src=new StringBuilder();
-
-		try {
-			URL url = new URL(uriStr);
-			http = (HttpURLConnection) url.openConnection();
-			http.setRequestMethod("GET");
-			http.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36");
-			http.connect();
-			in = http.getInputStream();
-			InputStreamReader isr = new InputStreamReader(in,"UTF-8");
-			BufferedReader reader = new BufferedReader(isr);
-			String line;
-			while ((line = reader.readLine()) != null) {
-                src.append(line);
-                src.append("\n");
-            }
-		} catch (Exception e) {
-			e.printStackTrace();
-			Log.e("ExtensionActivity","",e);
-			throw new RuntimeException();
-		} finally {
-			try {
-				if (http != null)
-					http.disconnect();
-				if (in != null)
-					in.close();
-			} catch (Exception e) {
-				Log.e("ExtensionActivity","",e);
-				throw new RuntimeException();
-			}
-		}
-		return src.toString();
-	}
-
 	@SuppressWarnings("deprecation")
 	@Override
 	protected Void doInBackground(String... params) {
 		String artist=URLEncoder.encode(params[1]);
 		String title=URLEncoder.encode(params[0]);
 		String uri="http://www.kget.jp/search/index.php?c=0&r="+artist+"&t="+title;
-		String temp=get(uri);
 
-		String keywordClassLyricAnchor="class=\"lyric-anchor";
-		int indexOfClassLyricAnchor=temp.indexOf(keywordClassLyricAnchor);
-		String keywordAHref="href=\"";
-		int indexOfAHref=temp.indexOf(keywordAHref,
-				indexOfClassLyricAnchor+keywordClassLyricAnchor.length()+2);
-		String keywordQuote="\"";
-		int indexOfQuote=temp.indexOf(keywordQuote,
-				indexOfAHref+keywordAHref.length()+2);
-		String href=temp.substring(indexOfAHref+keywordAHref.length(),indexOfQuote);
+		try {
+			Document doc0 = Jsoup.connect(uri).userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36").get();
+			Element res0 = doc0.getElementById("search-result");
+			if(res0 == null) throw new AsyncLyricsSearcherNotFoundException();
+			Element lyricAnchor = res0.getElementsByClass("lyric-anchor").get(0);
+			String lyricsUri = "http://www.kget.jp/"+lyricAnchor.attributes().get("href");
 
-		String uri1="http://www.kget.jp/"+href;
-		String lyricsTemp=get(uri1);
+			Document doc1 = Jsoup.connect(lyricsUri).userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36").get();
+			Element trunk = doc1.getElementById("lyric-trunk");
 
-		String keywordIdLyricTrunk="id=\"lyric-trunk";
-		int indexOfIdLyricTrunk=lyricsTemp.indexOf(keywordIdLyricTrunk);
-		String keywordGreaterThan=">";
-		int indexOfGreaterThan=lyricsTemp.indexOf(keywordGreaterThan
-				,indexOfIdLyricTrunk+keywordIdLyricTrunk.length());
-		String keywordCloseDiv="</div>";
-		int indexOfCloseDiv=lyricsTemp.indexOf(keywordCloseDiv,
-				indexOfGreaterThan+keywordGreaterThan.length()+2);
-		String tempLyrics=lyricsTemp.substring(indexOfGreaterThan+keywordGreaterThan.length()+1,indexOfCloseDiv);
-		tempLyrics=tempLyrics.replace("<br>","\n");
-		tempLyrics=tempLyrics.replace("<br/>","\n");
-		tempLyrics=tempLyrics.replace("<br />","\n");
-		tempLyrics=NCR.ncr(tempLyrics);
+			String tempLyrics=processHtml(trunk.html());
+			final String lyrics = tempLyrics;
 
+			new Thread(new Runnable(){
+				@Override
+				public void run() {
+					handler.post(new Runnable() {
+						public void run() {
+							((TextView)activity.findViewById(R.id.lyrics)).setText(lyrics);
+							((View)activity.findViewById(R.id.progressBar)).setVisibility(View.GONE);
+						}
+					});
+				}
+			}).start();
+		} catch (AsyncLyricsSearcherNotFoundException e) {
+			new Thread(new Runnable(){
+				@Override
+				public void run() {
+					handler.post(new Runnable() {
+						public void run() {
+							((TextView)activity.findViewById(R.id.lyrics)).setText(activity.getString(R.string.not_found));
+							((View)activity.findViewById(R.id.progressBar)).setVisibility(View.GONE);
+						}
+					});
+				}
+			}).start();
+		} catch (IOException e) {
+			e.printStackTrace();
 
-		final String lyrics=tempLyrics;
-
-		new Thread(new Runnable(){
-			@Override
-			public void run() {
-				handler.post(new Runnable() {
-					public void run() {
-						((TextView)activity.findViewById(R.id.lyrics)).setText(lyrics);
-						((View)activity.findViewById(R.id.progressBar)).setVisibility(View.GONE);
-					}
-				});
-			}
-		}).start();
+			new Thread(new Runnable(){
+				@Override
+				public void run() {
+					handler.post(new Runnable() {
+						public void run() {
+							((TextView)activity.findViewById(R.id.lyrics)).setText(activity.getString(R.string.failed));
+							((View)activity.findViewById(R.id.progressBar)).setVisibility(View.GONE);
+						}
+					});
+				}
+			}).start();
+		}
 
 		return null;
 	}
 
-	public static String decode(String str) {
-		Pattern pattern = Pattern.compile("&#(\\d+);|&#([\\da-fA-F]+);");
-		Matcher matcher = pattern.matcher(str);
-		StringBuffer sb = new StringBuffer();
-		Character buf;
-		while(matcher.find()){
-			if(matcher.group(1) != null){
-				buf = new Character(
-						(char)Integer.parseInt(matcher.group(1)));
-			}else{
-				buf = new Character(
-						(char)Integer.parseInt(matcher.group(2), 16));
-			}
-			matcher.appendReplacement(sb, buf.toString());
-		}
-		matcher.appendTail(sb);
-		return sb.toString();
+	public String processHtml(String html){
+		html=html.replace("<br>","\n");
+		html=html.replace("<br/>","\n");
+		html=html.replace("<br />","\n");
+		
+		html=html.replace("&amp;","&");
+		html=html.replace("&quot;","\"");
+		html=html.replace("&lt;","<");
+		html=html.replace("&gt;",">");
+		
+		String regex1 = "<.*?>";
+		Pattern p1 = Pattern.compile(regex1);
+		Matcher m1 = p1.matcher(html);
+		html=m1.replaceAll(" ");
+		
+		String regex2 = "&.*?;";
+		Pattern p2 = Pattern.compile(regex2);
+		Matcher m2 = p2.matcher(html);
+		html=m2.replaceAll(" ");
+		
+		html=html.replace("\n ","\n");
+		
+		return html;
 	}
 
-	public static class NCR {
-		private static final Pattern P = Pattern.compile(
-				"&#(x([0-9a-f]+)|([0-9]+));",
-				Pattern.CASE_INSENSITIVE
-				);
+	public class AsyncLyricsSearcherNotFoundException extends Exception{
 
-		private static boolean isHex(final String str) {
-			final char x = str.charAt(0);
-			return 'x' == x || 'X' == x;
-		}
-
-		public static String ncr(final String str) {
-			final StringBuffer rtn = new StringBuffer();
-			final Matcher matcher = P.matcher(str);
-			while (matcher.find()) {
-				final String group = matcher.group(1);
-				int parseInt;
-				if (isHex(group)) {
-					parseInt = Integer.parseInt(group.substring(1), 16);
-				} else {
-					parseInt = Integer.parseInt(group, 10);
-				}
-
-				final char c;
-				if (0 != (0x0ffff & parseInt)) {
-					c = (char) parseInt;
-				} else {
-					c = '?';
-				}
-				matcher.appendReplacement(rtn, Character.toString(c));
-			}
-			matcher.appendTail(rtn);
-
-			return rtn.toString();
-		}
 	}
 
 }

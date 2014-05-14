@@ -33,7 +33,7 @@
         <uses-library android:name="com.sonyericsson.media.infinite.extension_1" />
         <!-- Activity that will be started when user selects this infinite extension,
         @drawable/icon will be used as icon for this extension in the extension list -->
-        <activity android:icon="@drawable/ic_launcher" android:name="jp.nita.getlyricsmusicextension.ExtensionActivity" android:theme="@android:style/Theme.Holo">
+        <activity android:icon="@drawable/ic_launcher" android:name="jp.nita.getlyricsmusicextension.ExtensionActivity" android:theme="@android:style/Theme.Holo" android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="com.sonyericsson.media.infinite.ACTION_VIEW_INFINITE" />
                <!-- Mime type should be set to audio/* for Music Extensions -->

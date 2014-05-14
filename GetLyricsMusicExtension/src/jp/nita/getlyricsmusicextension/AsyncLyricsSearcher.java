@@ -13,6 +13,7 @@ import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 
 public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
@@ -29,7 +30,6 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 		StringBuilder src=new StringBuilder();
 
 		try {
-			// URLÇ…HTTPê⁄ë±
 			URL url = new URL(uriStr);
 			http = (HttpURLConnection) url.openConnection();
 			http.setRequestMethod("GET");
@@ -105,6 +105,7 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 				handler.post(new Runnable() {
 					public void run() {
 						((TextView)activity.findViewById(R.id.lyrics)).setText(lyrics);
+						((View)activity.findViewById(R.id.progressBar)).setVisibility(View.GONE);
 					}
 				});
 			}

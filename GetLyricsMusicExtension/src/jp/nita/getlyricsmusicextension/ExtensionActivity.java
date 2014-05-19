@@ -16,11 +16,12 @@
  */
 package jp.nita.getlyricsmusicextension;
 
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -28,17 +29,21 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
-import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-public class ExtensionActivity extends Activity {
+public class ExtensionActivity extends Activity implements OnClickListener {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
+		
+		findViewById(R.id.song_info).setOnClickListener(this);
 
 		Intent intent = getIntent();
 
@@ -97,6 +102,27 @@ public class ExtensionActivity extends Activity {
 			} finally {
 				trackCursor.close();
 			}
+		}
+	}
+
+	@Override
+	public void onClick(View v) {
+		if(v==findViewById(R.id.song_info)){
+			if(AsyncLyricsSearcher.lastResult.size()<=0) return;
+			List<String> titleList = new ArrayList<String>();
+			for(int i=0;i<AsyncLyricsSearcher.lastResult.size();i++){
+				titleList.add(AsyncLyricsSearcher.lastResult.get(i).title);
+			}
+			
+			new AlertDialog.Builder(ExtensionActivity.this)
+			.setTitle(getString(R.string.get_other))
+			.setItems(titleList.toArray(new String[1]),new DialogInterface.OnClickListener(){
+				@Override
+				public void onClick(DialogInterface arg0, int arg1) {
+					AsyncLyricsGetter getter=new AsyncLyricsGetter(ExtensionActivity.this,new Handler());
+					getter.execute(AsyncLyricsSearcher.lastResult.get(arg1).title,AsyncLyricsSearcher.lastResult.get(arg1).anchor);
+				}
+			}).show();
 		}
 	}
 

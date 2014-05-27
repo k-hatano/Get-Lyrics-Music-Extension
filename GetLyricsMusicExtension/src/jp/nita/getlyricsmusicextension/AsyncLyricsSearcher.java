@@ -30,6 +30,8 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 	@SuppressWarnings("deprecation")
 	@Override
 	protected Void doInBackground(String... params) {
+		lastResult=new ArrayList<TrackInfo>();
+		
 		new Thread(new Runnable(){
 			@Override
 			public void run() {
@@ -50,7 +52,6 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 			Document doc0 = Jsoup.connect(uri).userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36").get();
 			Element res0 = doc0.getElementById("search-result");
 			if(res0 == null) throw new AsyncLyricsSearcherNotFoundException();
-			lastResult=new ArrayList<TrackInfo>();
 			Elements lyricAnchors = res0.getElementsByClass("lyric-anchor");
 			for(int i=0;i<lyricAnchors.size();i++){
 				Element anchor = lyricAnchors.get(i);

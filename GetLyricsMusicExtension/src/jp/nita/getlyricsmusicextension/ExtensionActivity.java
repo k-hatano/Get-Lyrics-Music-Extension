@@ -33,7 +33,9 @@ import android.os.Handler;
 import android.provider.MediaStore;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class ExtensionActivity extends Activity implements OnClickListener {
@@ -42,7 +44,7 @@ public class ExtensionActivity extends Activity implements OnClickListener {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
-		
+
 		findViewById(R.id.song_info).setOnClickListener(this);
 
 		Intent intent = getIntent();
@@ -86,16 +88,12 @@ public class ExtensionActivity extends Activity implements OnClickListener {
 
 					String trackName = trackCursor.getString(trackCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE));
 					String artistName = trackCursor.getString(trackCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST));
-					String artistAndAlbumName = 
-							trackCursor.getString(trackCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST))
-							+" "+getString(R.string.separator)+" "+
-							trackCursor.getString(trackCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM));
 
 					((TextView)findViewById(R.id.track)).setText(trackName);
-					((TextView)findViewById(R.id.artist)).setText(artistAndAlbumName);
-					
+					((TextView)findViewById(R.id.artist)).setText(artistName);
+
 					String params[]={trackName,artistName};
-					
+
 					AsyncLyricsSearcher searcher = new AsyncLyricsSearcher(this);
 					searcher.execute(params);
 				}
@@ -108,22 +106,59 @@ public class ExtensionActivity extends Activity implements OnClickListener {
 	@Override
 	public void onClick(View v) {
 		if(v==findViewById(R.id.song_info)){
-			if(AsyncLyricsSearcher.lastResult.size()<=0) return;
-			List<String> titleList = new ArrayList<String>();
-			for(int i=0;i<AsyncLyricsSearcher.lastResult.size();i++){
-				titleList.add(AsyncLyricsSearcher.lastResult.get(i).title);
-			}
-			
-			new AlertDialog.Builder(ExtensionActivity.this)
-			.setTitle(getString(R.string.get_other))
-			.setItems(titleList.toArray(new String[1]),new DialogInterface.OnClickListener(){
-				@Override
-				public void onClick(DialogInterface arg0, int arg1) {
-					AsyncLyricsGetter getter=new AsyncLyricsGetter(ExtensionActivity.this,new Handler());
-					getter.execute(AsyncLyricsSearcher.lastResult.get(arg1).title,AsyncLyricsSearcher.lastResult.get(arg1).anchor);
+			if(AsyncLyricsSearcher.lastResult.size()<=0){
+				showResearchWithKeywordsDialog();
+			}else{
+				List<String> titleList = new ArrayList<String>();
+				for(int i=0;i<AsyncLyricsSearcher.lastResult.size();i++){
+					titleList.add(AsyncLyricsSearcher.lastResult.get(i).title);
 				}
-			}).show();
+				titleList.add(getString(R.string.re_search_with_keywords));
+
+				new AlertDialog.Builder(ExtensionActivity.this)
+				.setTitle(getString(R.string.get_other))
+				.setItems(titleList.toArray(new String[1]),new DialogInterface.OnClickListener(){
+					@Override
+					public void onClick(DialogInterface arg0, int arg1) {
+						if(arg1>=AsyncLyricsSearcher.lastResult.size()){
+							showResearchWithKeywordsDialog();
+						}else{
+							AsyncLyricsGetter getter=new AsyncLyricsGetter(ExtensionActivity.this,new Handler());
+							getter.execute(AsyncLyricsSearcher.lastResult.get(arg1).title,AsyncLyricsSearcher.lastResult.get(arg1).anchor);
+						}
+					}
+				}).show();
+			}
 		}
+	}
+
+	public boolean showResearchWithKeywordsDialog(){
+		final EditText title=new EditText(this);
+		final EditText artist=new EditText(this);
+		title.setText(((TextView)findViewById(R.id.track)).getText());
+		artist.setText(((TextView)findViewById(R.id.artist)).getText());
+		final LinearLayout layout=new LinearLayout(this);
+		layout.setOrientation(LinearLayout.VERTICAL);
+		layout.addView(title);
+		layout.addView(artist);
+		new AlertDialog.Builder(ExtensionActivity.this)
+		.setTitle(getString(R.string.re_search_with_keywords))
+		.setView(layout)
+		.setMessage(getString(R.string.input_title_and_artist))
+		.setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener(){
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				AsyncLyricsSearcher getter=new AsyncLyricsSearcher(ExtensionActivity.this);
+				getter.execute(title.getText().toString(),artist.getText().toString());
+			}
+		})
+		.setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener(){
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				
+			}
+		}).show();
+		return true;
 	}
 
 }

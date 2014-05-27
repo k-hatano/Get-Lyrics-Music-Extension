@@ -10,8 +10,11 @@
     <string name="searching">Searching lyrics…</string>
     <string name="powered_by">Powered by 歌詞GET</string>
     <string name="not_found">Lyrics not found.</string>
-    <string name="search_with_keywords">Search with keywords</string>
+    <string name="re_search_with_keywords">Re-search with keywords</string>
+    <string name="input_title_and_artist">Input title and artist name.</string>
     <string name="failed">Finding lyrics failed.</string>
     <string name="get_other">Get lyrics of the other song</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
     
 </resources>

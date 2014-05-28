@@ -33,12 +33,15 @@ import android.os.Handler;
 import android.provider.MediaStore;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.webkit.MimeTypeMap;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class ExtensionActivity extends Activity implements OnClickListener {
+	
+	private static final int PICKUP_LAUNCHING_BROWSER = 1;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +49,7 @@ public class ExtensionActivity extends Activity implements OnClickListener {
 		setContentView(R.layout.main);
 
 		findViewById(R.id.songInfo).setOnClickListener(this);
+		findViewById(R.id.poweredBy).setOnClickListener(this);
 
 		findViewById(R.id.reSearch).setOnClickListener(this);
 		findViewById(R.id.reSearchWithKeywords).setOnClickListener(this);
@@ -142,6 +146,11 @@ public class ExtensionActivity extends Activity implements OnClickListener {
 		if(v==findViewById(R.id.reSearchWithKeywords)){
 			showResearchWithKeywordsDialog();
 		}
+		if(v==findViewById(R.id.poweredBy)){
+			Uri trackUri = Uri.parse(AsyncLyricsGetter.getLastUriString());
+			Intent intent = new Intent(Intent.ACTION_VIEW,trackUri);
+			startActivityForResult(intent,PICKUP_LAUNCHING_BROWSER);
+		}
 	}
 
 	public boolean showResearchWithKeywordsDialog(){
@@ -173,6 +182,12 @@ public class ExtensionActivity extends Activity implements OnClickListener {
 			}
 		}).show();
 		return true;
+	}
+	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data){
+		super.onActivityResult(requestCode,resultCode,data);
+		
 	}
 
 }

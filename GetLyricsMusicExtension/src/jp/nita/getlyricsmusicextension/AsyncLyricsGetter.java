@@ -124,6 +124,10 @@ public class AsyncLyricsGetter extends AsyncTask<String, Void, Void> {
 		return html;
 	}
 	
+	public static String getLastUriString(){
+		return "http://www.kget.jp/"+lastAnchor;
+	}
+	
 	public static void clearCache(){
 		lastTitle="";
 		lastAnchor="";

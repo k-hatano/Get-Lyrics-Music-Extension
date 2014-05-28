@@ -20,7 +20,10 @@ import android.widget.TextView;
 public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 	Activity activity;
 	final static Handler handler = new Handler();
-	
+
+	static String lastTitle="";
+	static String lastArtist="";
+
 	public static List<TrackInfo> lastResult=new ArrayList<TrackInfo>();
 
 	AsyncLyricsSearcher(Activity a){
@@ -30,8 +33,6 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 	@SuppressWarnings("deprecation")
 	@Override
 	protected Void doInBackground(String... params) {
-		lastResult=new ArrayList<TrackInfo>();
-		
 		new Thread(new Runnable(){
 			@Override
 			public void run() {
@@ -39,30 +40,41 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 					public void run() {
 						((TextView)activity.findViewById(R.id.lyrics)).setText(activity.getString(R.string.searching));
 						((View)activity.findViewById(R.id.progressBar)).setVisibility(View.VISIBLE);
+						((View)activity.findViewById(R.id.reSearch)).setVisibility(View.GONE);
+						((View)activity.findViewById(R.id.reSearchWithKeywords)).setVisibility(View.GONE);
 					}
 				});
 			}
 		}).start();
-		
+
 		String artist=URLEncoder.encode(params[1]);
 		String title=URLEncoder.encode(params[0]);
+
 		String uri="http://www.kget.jp/search/index.php?c=0&r="+artist+"&t="+title;
 
 		try {
-			Document doc0 = Jsoup.connect(uri).userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36").get();
-			Element res0 = doc0.getElementById("search-result");
-			if(res0 == null) throw new AsyncLyricsSearcherNotFoundException();
-			Elements lyricAnchors = res0.getElementsByClass("lyric-anchor");
-			for(int i=0;i<lyricAnchors.size();i++){
-				Element anchor = lyricAnchors.get(i);
-				String t = anchor.getElementsByClass("title").get(0).text();
-				String b = anchor.attributes().get("href");
-				String a = "";
-				lastResult.add(new TrackInfo(t,a,b));
+			if(artist.equals(lastArtist)&&title.equals(lastTitle)){
+				AsyncLyricsGetter getter = new AsyncLyricsGetter(activity,handler);
+				getter.execute(AsyncLyricsGetter.lastTitle,AsyncLyricsGetter.lastAnchor);
+			}else{
+				lastResult=new ArrayList<TrackInfo>();
+				Document doc0 = Jsoup.connect(uri).userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36").get();
+				Element res0 = doc0.getElementById("search-result");
+				if(res0 == null) throw new AsyncLyricsSearcherNotFoundException();
+				Elements lyricAnchors = res0.getElementsByClass("lyric-anchor");
+				for(int i=0;i<lyricAnchors.size();i++){
+					Element anchor = lyricAnchors.get(i);
+					String t = anchor.getElementsByClass("title").get(0).text();
+					String b = anchor.attributes().get("href");
+					String a = "";
+					lastResult.add(new TrackInfo(t,a,b));
+				}
+				AsyncLyricsGetter getter = new AsyncLyricsGetter(activity,handler);
+				getter.execute(lastResult.get(0).title,lastResult.get(0).anchor);
 			}
-			
-			AsyncLyricsGetter getter = new AsyncLyricsGetter(activity,handler);
-			getter.execute(lastResult.get(0).title,lastResult.get(0).anchor);
+
+			lastArtist=artist;
+			lastTitle=title;
 		} catch (AsyncLyricsSearcherNotFoundException e) {
 			new Thread(new Runnable(){
 				@Override
@@ -71,6 +83,8 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 						public void run() {
 							((TextView)activity.findViewById(R.id.lyrics)).setText(activity.getString(R.string.not_found));
 							((View)activity.findViewById(R.id.progressBar)).setVisibility(View.GONE);
+							((View)activity.findViewById(R.id.reSearch)).setVisibility(View.GONE);
+							((View)activity.findViewById(R.id.reSearchWithKeywords)).setVisibility(View.VISIBLE);
 						}
 					});
 				}
@@ -85,6 +99,8 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 						public void run() {
 							((TextView)activity.findViewById(R.id.lyrics)).setText(activity.getString(R.string.failed));
 							((View)activity.findViewById(R.id.progressBar)).setVisibility(View.GONE);
+							((View)activity.findViewById(R.id.reSearch)).setVisibility(View.VISIBLE);
+							((View)activity.findViewById(R.id.reSearchWithKeywords)).setVisibility(View.GONE);
 						}
 					});
 				}
@@ -92,6 +108,11 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 		}
 
 		return null;
+	}
+	
+	public static void clearCache(){
+		lastTitle="";
+		lastArtist="";
 	}
 
 	public class AsyncLyricsSearcherNotFoundException extends Exception{

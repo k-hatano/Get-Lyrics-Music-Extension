@@ -22,13 +22,13 @@
     android:orientation="vertical" >
 
     <RelativeLayout
-        android:id="@+id/song_info"
+        android:id="@+id/songInfo"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:padding="8dp" >
 
         <ImageView
-            android:id="@+id/album_artwork"
+            android:id="@+id/albumArtwork"
             android:layout_width="64dp"
             android:layout_height="64dp"
             android:layout_alignParentLeft="true"
@@ -40,7 +40,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
-            android:layout_toRightOf="@+id/album_artwork"
+            android:layout_toRightOf="@+id/albumArtwork"
             android:textAppearance="?android:attr/textAppearanceLarge" />
 
         <TextView
@@ -48,11 +48,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/track"
-            android:layout_toRightOf="@+id/album_artwork" />
+            android:layout_toRightOf="@+id/albumArtwork" />
     </RelativeLayout>
 
     <TextView
-        android:id="@+id/powered_by"
+        android:id="@+id/poweredBy"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
@@ -61,8 +61,8 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/powered_by"
-        android:layout_below="@+id/song_info"
+        android:layout_above="@+id/poweredBy"
+        android:layout_below="@+id/songInfo"
         android:orientation="vertical" >
 
         <ScrollView
@@ -84,6 +84,24 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true" />
+
+        <Button
+            android:id="@+id/reSearch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:text="@string/re_search"
+            android:visibility="gone" />
+        
+        <Button
+            android:id="@+id/reSearchWithKeywords"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:text="@string/re_search_with_keywords"
+            android:visibility="gone" />
 
     </RelativeLayout>
 

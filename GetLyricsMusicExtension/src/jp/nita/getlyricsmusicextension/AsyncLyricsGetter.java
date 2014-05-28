@@ -19,6 +19,10 @@ public class AsyncLyricsGetter extends AsyncTask<String, Void, Void> {
 	Activity activity;
 	static Handler handler;
 
+	public static String lastTitle="";
+	public static String lastAnchor="";
+	static String lastLyrics="";
+
 	AsyncLyricsGetter(Activity a,Handler h){
 		activity=a;
 		handler=h;
@@ -28,7 +32,7 @@ public class AsyncLyricsGetter extends AsyncTask<String, Void, Void> {
 	protected Void doInBackground(String... params) {
 		try {
 			final String track=params[0];
-			
+
 			new Thread(new Runnable(){
 				@Override
 				public void run() {
@@ -37,17 +41,28 @@ public class AsyncLyricsGetter extends AsyncTask<String, Void, Void> {
 							((TextView)activity.findViewById(R.id.track)).setText(track);
 							((TextView)activity.findViewById(R.id.lyrics)).setText(activity.getString(R.string.searching));
 							((View)activity.findViewById(R.id.progressBar)).setVisibility(View.VISIBLE);
+							((View)activity.findViewById(R.id.reSearch)).setVisibility(View.GONE);
+							((View)activity.findViewById(R.id.reSearchWithKeywords)).setVisibility(View.GONE);
 						}
 					});
 				}
 			}).start();
-			
+
 			String lyricsUri = "http://www.kget.jp/"+params[1];
+			String tempLyrics;
 
-			Document doc1 = Jsoup.connect(lyricsUri).userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36").get();
-			Element trunk = doc1.getElementById("lyric-trunk");
+			if(params[1].equals(lastAnchor)){
+				tempLyrics=lastLyrics;
+			}else{
+				Document doc1 = Jsoup.connect(lyricsUri).userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36").get();
+				Element trunk = doc1.getElementById("lyric-trunk");
 
-			String tempLyrics=processHtml(trunk.html());
+				tempLyrics=processHtml(trunk.html());
+				lastLyrics=tempLyrics;
+				lastTitle=track;
+				lastAnchor=params[1];
+			}
+
 			final String lyrics = tempLyrics;
 
 			new Thread(new Runnable(){
@@ -57,6 +72,8 @@ public class AsyncLyricsGetter extends AsyncTask<String, Void, Void> {
 						public void run() {
 							((TextView)activity.findViewById(R.id.lyrics)).setText(lyrics);
 							((View)activity.findViewById(R.id.progressBar)).setVisibility(View.GONE);
+							((View)activity.findViewById(R.id.reSearch)).setVisibility(View.GONE);
+							((View)activity.findViewById(R.id.reSearchWithKeywords)).setVisibility(View.GONE);
 						}
 					});
 				}
@@ -71,6 +88,8 @@ public class AsyncLyricsGetter extends AsyncTask<String, Void, Void> {
 						public void run() {
 							((TextView)activity.findViewById(R.id.lyrics)).setText(activity.getString(R.string.failed));
 							((View)activity.findViewById(R.id.progressBar)).setVisibility(View.GONE);
+							((View)activity.findViewById(R.id.reSearch)).setVisibility(View.VISIBLE);
+							((View)activity.findViewById(R.id.reSearchWithKeywords)).setVisibility(View.GONE);
 						}
 					});
 				}
@@ -103,6 +122,12 @@ public class AsyncLyricsGetter extends AsyncTask<String, Void, Void> {
 		html=html.replace("\n ","\n");
 
 		return html;
+	}
+	
+	public static void clearCache(){
+		lastTitle="";
+		lastAnchor="";
+		lastLyrics="";
 	}
 
 	public class AsyncLyricsSearcherNotFoundException extends Exception{

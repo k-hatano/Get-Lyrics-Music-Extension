@@ -45,7 +45,10 @@ public class ExtensionActivity extends Activity implements OnClickListener {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 
-		findViewById(R.id.song_info).setOnClickListener(this);
+		findViewById(R.id.songInfo).setOnClickListener(this);
+
+		findViewById(R.id.reSearch).setOnClickListener(this);
+		findViewById(R.id.reSearchWithKeywords).setOnClickListener(this);
 
 		Intent intent = getIntent();
 
@@ -81,7 +84,7 @@ public class ExtensionActivity extends Activity implements OnClickListener {
 						Resources r = getResources();
 						bm = BitmapFactory.decodeResource(r, R.drawable.ic_launcher);
 					}
-					ImageView iv = (ImageView)findViewById(R.id.album_artwork);
+					ImageView iv = (ImageView)findViewById(R.id.albumArtwork);
 					iv.setImageBitmap(bm);
 
 					// And retrieve the wanted information
@@ -105,7 +108,7 @@ public class ExtensionActivity extends Activity implements OnClickListener {
 
 	@Override
 	public void onClick(View v) {
-		if(v==findViewById(R.id.song_info)){
+		if(v==findViewById(R.id.songInfo)){
 			if(AsyncLyricsSearcher.lastResult.size()<=0){
 				showResearchWithKeywordsDialog();
 			}else{
@@ -130,9 +133,20 @@ public class ExtensionActivity extends Activity implements OnClickListener {
 				}).show();
 			}
 		}
+		if(v==findViewById(R.id.reSearch)){
+			String params[]={((TextView)findViewById(R.id.track)).getText().toString(),
+					((TextView)findViewById(R.id.artist)).getText().toString()};
+			AsyncLyricsSearcher searcher = new AsyncLyricsSearcher(this);
+			searcher.execute(params);
+		}
+		if(v==findViewById(R.id.reSearchWithKeywords)){
+			showResearchWithKeywordsDialog();
+		}
 	}
 
 	public boolean showResearchWithKeywordsDialog(){
+		AsyncLyricsSearcher.clearCache();
+		AsyncLyricsGetter.clearCache();
 		final EditText title=new EditText(this);
 		final EditText artist=new EditText(this);
 		title.setText(((TextView)findViewById(R.id.track)).getText());
@@ -155,7 +169,7 @@ public class ExtensionActivity extends Activity implements OnClickListener {
 		.setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener(){
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
-				
+
 			}
 		}).show();
 		return true;

@@ -17,6 +17,7 @@
 
 package jp.nita.getlyricsmusicextension;
 
+import jp.nita.getlyricsmusicextension.R;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -32,7 +33,7 @@ public class ExtensionReceiver extends BroadcastReceiver {
         // This extra can be used to have many extension activities registered in
         // the same apk
         if (intent.getStringExtra("com.sonyericsson.media.infinite.EXTRA_ACTIVITY_NAME").equals(
-        		ExtensionReceiver.class.getName())) {
+        		ExtensionActivity.class.getName())) {
 
             Bundle extras = new Bundle();
 

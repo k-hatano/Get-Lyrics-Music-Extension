@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import android.app.Activity;
 import android.os.AsyncTask;
@@ -48,16 +49,18 @@ public class AsyncLyricsGetter extends AsyncTask<String, Void, Void> {
 				}
 			}).start();
 
-			String lyricsUri = "http://www.kget.jp/"+params[1];
+			String lyricsUri = params[1];
 			String tempLyrics;
 
 			if(params[1].equals(lastAnchor)){
 				tempLyrics=lastLyrics;
 			}else{
 				Document doc1 = Jsoup.connect(lyricsUri).userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36").get();
-				Element trunk = doc1.getElementById("lyric-trunk");
+				Element lyricview = doc1.getElementById("lyricview");
+				
+				Elements body1 = lyricview.getElementsByClass("body");
 
-				tempLyrics=processHtml(trunk.html());
+				tempLyrics=processHtml(body1.get(0).html());
 				lastLyrics=tempLyrics;
 				lastTitle=track;
 				lastAnchor=params[1];
@@ -118,6 +121,11 @@ public class AsyncLyricsGetter extends AsyncTask<String, Void, Void> {
 		Pattern p2 = Pattern.compile(regex2);
 		Matcher m2 = p2.matcher(html);
 		html=m2.replaceAll(" ");
+		
+		String regex3 = "^[ \r\n\t]*";
+		Pattern p3 = Pattern.compile(regex3);
+		Matcher m3 = p3.matcher(html);
+		html=m3.replaceAll("");
 
 		html=html.replace("\n ","\n");
 
@@ -125,7 +133,7 @@ public class AsyncLyricsGetter extends AsyncTask<String, Void, Void> {
 	}
 	
 	public static String getLastUriString(){
-		return "http://www.kget.jp/"+lastAnchor;
+		return lastAnchor;
 	}
 	
 	public static void clearCache(){

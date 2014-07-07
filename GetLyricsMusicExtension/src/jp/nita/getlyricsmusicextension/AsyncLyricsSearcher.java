@@ -50,7 +50,7 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 		String artist=URLEncoder.encode(params[1]);
 		String title=URLEncoder.encode(params[0]);
 
-		String uri="http://www.kget.jp/search/index.php?c=0&r="+artist+"&t="+title;
+		String uri="http://www.evesta.jp/lyric/search2.php?a="+artist+"&t="+title;
 
 		try {
 			if(artist.equals(lastArtist)&&title.equals(lastTitle)){
@@ -59,12 +59,12 @@ public class AsyncLyricsSearcher extends AsyncTask<String, Void, Void> {
 			}else{
 				lastResult=new ArrayList<TrackInfo>();
 				Document doc0 = Jsoup.connect(uri).userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36").get();
-				Element res0 = doc0.getElementById("search-result");
+				Element res0 = doc0.getElementById("lyricList");
 				if(res0 == null) throw new AsyncLyricsSearcherNotFoundException();
-				Elements lyricAnchors = res0.getElementsByClass("lyric-anchor");
+				Elements lyricAnchors = res0.getElementsByTag("table");
 				for(int i=0;i<lyricAnchors.size();i++){
-					Element anchor = lyricAnchors.get(i);
-					String t = anchor.getElementsByClass("title").get(0).text();
+					Element anchor = lyricAnchors.get(i).getElementsByTag("a").get(0);
+					String t = anchor.text();
 					String b = anchor.attributes().get("href");
 					String a = "";
 					lastResult.add(new TrackInfo(t,a,b));

@@ -21,6 +21,7 @@ import java.util.List;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Instrumentation;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -28,9 +29,11 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.webkit.MimeTypeMap;
@@ -188,6 +191,31 @@ public class ExtensionActivity extends Activity implements OnClickListener {
 	protected void onActivityResult(int requestCode, int resultCode, Intent data){
 		super.onActivityResult(requestCode,resultCode,data);
 		
+	}
+	
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent e) {
+		if(e.getKeyCode()==KeyEvent.KEYCODE_CAMERA){
+			if(e.getAction()==KeyEvent.ACTION_UP){
+				KeyEventSender sender = new KeyEventSender();
+				sender.execute(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+				return true;
+			}else{
+				return true;
+			}
+		}
+
+		return super.dispatchKeyEvent(e);
+	}
+	
+	private class KeyEventSender extends AsyncTask<Integer, Object, Object> {
+		@Override
+		protected Object doInBackground(Integer... params) {
+			int keycode = (Integer)(params[0]);
+			Instrumentation ist = new Instrumentation();
+			ist.sendKeyDownUpSync(keycode);
+			return null;
+		}
 	}
 
 }
